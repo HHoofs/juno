@@ -10,3 +10,5 @@ db_nist.csv
 # Pycharm
 .idea/
 __pycache__/
+.Rproj.user
+*.Rproj

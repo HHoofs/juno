@@ -1,0 +1,11 @@
+# Keras
+logs/
+
+# Images
+sd04/
+
+# Virtual env
+venv/
+
+# Database
+db_nist.csv

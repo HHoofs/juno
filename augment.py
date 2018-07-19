@@ -273,83 +273,82 @@ if __name__ == '__main__':
     with Image.open('sd04/png_txt/figs_0/f0001_01.png') as x_img:
         x_img_array = np.array(x_img)
 
+        plt.figure(figsize=(6.45,4.50), dpi=300)
         plt.subplot(3,5,1)
         plt.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('orgineel')
+        plt.title('Orginal')
 
         plt.subplot(3,5,2)
         plt.imshow(affine_transform_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('affine transform')
+        plt.title('Affine')
 
         plt.subplot(3,5,3)
         plt.imshow(salt_pepper_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('salt and peper transform')
+        plt.title('Salt and pepper')
 
         plt.subplot(3,5,4)
         plt.imshow(swirl_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('swirl transform')
+        plt.title('Swirl')
 
         plt.subplot(3,5,5)
         _flip_img, _ = flip_image(x_img_array, False)
         plt.imshow(_flip_img, cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('flip transform')
+        plt.title('Flip')
 
         plt.subplot(3,5,6)
         plt.imshow(equalize_adapthist_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('equalize transform')
+        plt.title('Equalize')
 
         plt.subplot(3,5,7)
         plt.imshow(random_noise_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('random noise transform')
+        plt.title('Random noise')
 
         plt.subplot(3,5,8)
         plt.imshow(speckle_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('speckle transform')
+        plt.title('Speckle')
 
         plt.subplot(3,5,9)
         plt.imshow(zoom_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('zoom transform')
+        plt.title('Zoom')
 
         plt.subplot(3,5,10)
         plt.imshow(image_perspective_transform(x_img, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('perspective transform')
+        plt.title('Perspective')
 
         plt.subplot(3,5,11)
         plt.imshow(image_emboss(x_img, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('emboss transform')
+        plt.title('Emboss')
 
         plt.subplot(3,5,12)
         plt.imshow(image_sharpen(x_img, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('sharpen transform')
+        plt.title('Sharpen')
 
         plt.subplot(3,5,13)
         plt.imshow(image_blur(x_img, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('blur transform')
+        plt.title('Blur')
 
         plt.subplot(3,5,14)
         plt.imshow(image_edge_enhance(x_img, False), cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('edge transform')
+        plt.title('Edge')
 
         plt.subplot(3,5,15)
         _aug_img, _ = image_augment_array(x_img, 1, 1)
         plt.imshow(_aug_img, cmap=plt.cm.gray, interpolation='none')
         plt.axis('off')
-        plt.title('sample transform')
+        plt.title('Sample')
 
-
-        plt.show()
-
+        plt.savefig('figs/plot_augmentations.png', dpi=1200)

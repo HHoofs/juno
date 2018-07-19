@@ -9,3 +9,7 @@ venv/
 
 # Database
 db_nist.csv
+
+# Pycharm
+.idea/
+__pycache__/

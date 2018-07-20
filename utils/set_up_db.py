@@ -6,7 +6,7 @@ import re
 from tqdm import tqdm
 
 VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
-FILE = 'db_nist.csv'
+FILE = 'sd04/db_nist.csv'
 
 def read_files_sd04(vars=VARS):
     list_ids = glob.glob('sd04/png_txt/*/*.txt')

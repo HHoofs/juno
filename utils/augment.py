@@ -1,7 +1,7 @@
 import random
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image, ImageFilter
 from skimage.exposure import equalize_adapthist
 from skimage.transform import PiecewiseAffineTransform, warp, swirl, resize
@@ -39,7 +39,7 @@ def affine_transform_image(image, prop=.5):
     out_rows = int(image.shape[0] - factor1 * 50)
     out_cols = cols
     _image = warp(image, tform, output_shape=(out_rows, out_cols), mode='reflect')
-    _image = resize(_image, output_shape=(rows,cols))
+    _image = resize(_image, output_shape=(rows, cols))
     return zoom_image(_image, False, True)
 
 
@@ -151,7 +151,7 @@ def image_perspective_transform(image, prop=.5):
     xshift = abs(m) * width
     new_width = width + int(round(xshift))
     _img = image.transform((new_width, height), Image.AFFINE,
-                        (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
+                           (1, m, -xshift if m > 0 else 0, 0, 1, 0), Image.BICUBIC)
     _image = _img.resize((int(width*1.8), int(height*1.8)))
     return image_crop_center(_image, _img_size)
 

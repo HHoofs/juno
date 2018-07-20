@@ -1,17 +1,13 @@
-import os
-
 import keras
 import keras.backend as K
 import numpy as np
-from PIL import Image
 from keras import models
-from keras.applications.inception_v3 import InceptionV3, preprocess_input
+from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Input, MaxPooling2D, Conv2D, Activation, BatchNormalization, AveragePooling2D, concatenate, \
     GlobalAveragePooling2D, Dense
-from skimage.transform import resize
 
-from augment import image_augment_array, to_rgb
-from set_up_db import read_csv_to_dict
+from utils.set_up_db import read_csv_to_dict
+from utils.generator import DataGenerator
 
 
 class Neural_Net():
@@ -178,15 +174,21 @@ class Neural_Net():
                                                           ref_weights=self.freezed_weight_checks)
         if all(checks):
             print('Freezing of InceptionV3 successful')
+            output = [True]
         else:
             print('Freezing of InceptionV3 unsuccessful')
+            output = [False]
 
         checks = self.check_layers_weights_with_reference(layers=self.custom_inception_layers,
                                                           ref_weights=self.trained_weight_checks)
         if not any(checks):
             print('Training of custom Inception successful')
+            output.append(True)
         else:
             print('Training of custom Inception unsuccessful')
+            output.append(False)
+
+        return output
 
     def check_layers_weights_with_reference(self, layers, ref_weights):
         weights = self.get_batchnorm_conv_weights(layers)
@@ -214,21 +216,12 @@ class Neural_Net():
                 optimizer=keras.optimizers.Adadelta(), metrics=['acc']):
         self.neural_net.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
-    def fit(self, training_generator, validation_generator=None, epochs=None, callbacks=None):
-        self.neural_net.fit_generator(generator=training_generator,
-                                      validation_data=validation_generator,
-                                      epochs=epochs,
-                                      callbacks=callbacks)
+    def fit(self, training_generator, validation_generator=None, epochs=None, callbacks=None, **kwargs):
+        self.neural_net.fit_generator(generator=training_generator, validation_data=validation_generator,
+                                      epochs=epochs, callbacks=callbacks, **kwargs)
 
 
-
-def conv2d_bn_alt(x,
-                  filters,
-                  num_row,
-                  num_col,
-                  padding='same',
-                  strides=(1, 1),
-                  name=None):
+def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), name=None):
     """Utility function to apply conv + BN.
 
     # Arguments
@@ -269,98 +262,11 @@ def conv2d_bn_alt(x,
     return x
 
 
-def random_string():
-    return str(np.random.random())[2:]
-
-
-class DataGenerator(keras.utils.Sequence):
-    #Generates data for Keras
-    def __init__(self, list_ids, path, look_up, num_classes,
-                 batch_size=8, dim=(512, 512), n_channels=1, shuffle=True, mode='L',
-                 prop_image=.25, prop_array=.5):
-        #Initialization
-        self.list_ids = list_ids
-        if path:
-            self.path = path
-        else:
-            self.path = ''
-        self.look_up = look_up
-        self.num_classes = num_classes
-        self.batch_size = batch_size
-        self.dim = dim
-        self.n_channels = n_channels
-        self.shuffle = shuffle
-        self.mode = mode
-        self.prop_image = prop_image
-        self.prop_array = prop_array
-        self.on_epoch_end()
-        self.indexes = np.arange(len(self.list_ids))
-
-    def __len__(self):
-        # Denotes the number of batches per epoch
-        return int(np.floor(len(self.list_ids) / self.batch_size))
-
-    def __getitem__(self, index):
-        # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-
-        # Find list of IDs
-        list_ids_temp = [self.list_ids[k] for k in indexes]
-
-        # Generate data
-        x, y = self.__data_generation(list_ids_temp)
-
-        return x, y
-
-    def on_epoch_end(self):
-        # Updates indexes after each epoch
-        self.indexes = np.arange(len(self.list_ids))
-        if self.shuffle:
-            np.random.shuffle(self.indexes)
-
-    def __data_generation(self, list_ids_temp):
-        # Generates data containing batch_size samples X : (n_samples, *dim, n_channels)
-        x_image_raw = np.zeros((self.batch_size, *self.dim, self.n_channels))
-        x_image_pre = np.zeros((self.batch_size, 299, 299, 3))
-
-        x_images = {'raw': x_image_raw, 'pre': x_image_pre}
-
-        y = np.zeros((self.batch_size), dtype=int)
-
-        # Generate data
-        for i, sample in enumerate(list_ids_temp):
-
-            with Image.open(os.path.join(self.path, sample + '.png')) as x_img:
-                x_img = x_img.convert(mode=self.mode)
-
-                if self.prop_array == 0 and self.prop_image == 0:
-                    x_arr = np.array(x_img)
-                else:
-                    x_arr, flipped = image_augment_array(x_img, self.prop_image, self.prop_array)
-
-                x_arr_raw = resize(x_arr, output_shape=(self.dim[0], self.dim[1]))
-
-                # normaliz here because preprocess for inception V3 should be clean
-                _array_x_raw = x_arr_raw
-                _array_x_raw *= 255.0 / _array_x_raw.max()
-
-                x_images['raw'][i,] = np.expand_dims(_array_x_raw, 2)
-
-                x_arr_pre = resize(x_arr, output_shape=(299, 299))
-                if self.mode == 'L':
-                    x_arr_pre = to_rgb(x_arr_pre)
-
-                x_images['pre'][i,] = preprocess_input(x_arr_pre)
-
-            y[i] = self.look_up.get(sample)
-
-        return x_images, keras.utils.to_categorical(y, num_classes=self.num_classes)
-
-
-if __name__ == '__main__':
-    ids_cat, mapping = read_csv_to_dict()
+def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids, path=None, look_up=ids_cat, num_classes=len(mapping))
+    training_gen = DataGenerator(list_ids=ids[:16], path=None, look_up=ids_cat, num_classes=len(mapping))
+    valid_gen = DataGenerator(list_ids=ids[16:32], path=None, look_up=ids_cat, num_classes=len(mapping),
+                              prop_image=0, prop_array=0)
 
     model = Neural_Net(img_size=(512,512), num_classes=len(mapping))
     model.set_net(relative_size=1)
@@ -370,6 +276,11 @@ if __name__ == '__main__':
 
     callback_tb = keras.callbacks.TensorBoard()
 
-    model.fit(training_generator=training_gen, epochs=2, callbacks=[callback_tb])
+    model.fit(training_generator=training_gen, validation_generator=valid_gen,
+              epochs=2, callbacks=[callback_tb])
 
     model.check_freezed_trained_weights()
+
+
+if __name__ == '__main__':
+    pass

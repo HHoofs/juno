@@ -1,7 +1,7 @@
 require(ggplot2)
 require(foreign)
 
-df_ <- read.csv('db_nist.csv', stringsAsFactors = FALSE)
+df_ <- read.csv('sd04/db_nist.csv', stringsAsFactors = FALSE)
 df_$gender <- as.factor(df_$gender)
 df_$pattern <- as.factor(df_$pattern)
 

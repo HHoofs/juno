@@ -1,9 +1,10 @@
 from PIL import Image
 import os
-import matplotlib.pyplot as plt
 import matplotlib
 
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 
 def image_to_array(path, id, mode='L'):
     if path is None:

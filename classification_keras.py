@@ -150,7 +150,7 @@ class Neural_Net():
 
         x_combined = concatenate([x, x_pre.output])
 
-        x_comb = Dense(512, activation='relu')(x_combined)
+        x_comb = Dense(1024, activation='relu')(x_combined)
 
         y = Dense(self.num_classes, activation='softmax')(x_comb)
 
@@ -276,7 +276,8 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
 
 def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping)
+    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping,
+                                 prop_image=.25, prop_array=.50)
     valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping,
                               prop_image=0, prop_array=0)
 

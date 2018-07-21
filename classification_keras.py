@@ -222,9 +222,9 @@ class Neural_Net():
                 optimizer=keras.optimizers.Adadelta(), metrics=['acc']):
         self.neural_net.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
-    def fit(self, training_generator, validation_generator=None, epochs=None, callbacks=None, **kwargs):
+    def fit(self, training_generator, validation_generator=None, epochs=None, steps_per_epoch=32, callbacks=None, **kwargs):
         self.neural_net.fit_generator(generator=training_generator, validation_data=validation_generator,
-                                      epochs=epochs, callbacks=callbacks, **kwargs)
+                                      epochs=epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks, **kwargs)
 
     def predict(self, pred_generator):
         return self.neural_net.predict_generator(generator=pred_generator)

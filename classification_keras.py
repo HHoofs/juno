@@ -274,8 +274,8 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
 
 def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids[:16], path=None, look_up=ids_cat, mapping=mapping)
-    valid_gen = DataGenerator(list_ids=ids[16:32], path=None, look_up=ids_cat, mapping=mapping,
+    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping)
+    valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping,
                               prop_image=0, prop_array=0)
 
     model = Neural_Net(img_size=(512,512), num_classes=len(mapping))
@@ -296,7 +296,7 @@ def train_neural_net(ids_cat, mapping):
 
 def predict_neural_net(model, ids_cat, mapping):
     ids = list(ids_cat.keys())
-    pred_ids = ids[32:48]
+    pred_ids = ids[-500:]
     pred_gen = DataGenerator(list_ids=pred_ids, path=None, look_up=ids_cat, mapping=mapping,
                               prop_image=0, prop_array=0, shuffle=False, predict=True)
     preds = model.predict(pred_gen)

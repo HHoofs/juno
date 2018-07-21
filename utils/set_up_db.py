@@ -68,7 +68,9 @@ def read_csv_to_dict(length=-1):
                 # get mapping
                 cat_rec = mapping.get(cat)
                 # store to output
-                output[row[full_path_loc]] = cat_rec
+                _id = row[full_path_loc]
+                _id_san = _id.replace("\\", "/")
+                output[_id_san] = cat_rec
             elif i > length:
                 break
     return output, mapping

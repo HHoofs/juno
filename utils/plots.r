@@ -13,5 +13,4 @@ plot_patterns <-
   theme_bw() +
   theme(legend.position = 'none')
 
-
 ggsave('figs/plot_patterns.png', plot=plot_patterns)

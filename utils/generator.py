@@ -3,7 +3,7 @@ import os
 import keras
 import numpy as np
 from PIL import Image
-from keras_applications.inception_v3 import preprocess_input
+from keras.applications.inception_v3 import preprocess_input
 from skimage.transform import resize
 
 from .augment import image_augment_array, to_rgb, image_light_augment_array

@@ -222,9 +222,9 @@ class Neural_Net():
                 optimizer=keras.optimizers.Adadelta(), metrics=['acc']):
         self.neural_net.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
-    def fit(self, training_generator, validation_generator=None, epochs=None, steps_per_epoch=32, callbacks=None, **kwargs):
+    def fit(self, training_generator, validation_generator=None, epochs=None, callbacks=None, **kwargs):
         self.neural_net.fit_generator(generator=training_generator, validation_data=validation_generator,
-                                      epochs=epochs, steps_per_epoch=steps_per_epoch, callbacks=callbacks, **kwargs)
+                                      epochs=epochs, callbacks=callbacks, **kwargs)
 
     def predict(self, pred_generator):
         return self.neural_net.predict_generator(generator=pred_generator)
@@ -276,9 +276,9 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
 
 def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping,
+    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping, batch_size=32,
                                  prop_image=.25, prop_array=.50)
-    valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping,
+    valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping, batch_size=32,
                               prop_image=0, prop_array=0)
 
     model = Neural_Net(img_size=(512,512), num_classes=len(mapping))

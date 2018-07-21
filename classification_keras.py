@@ -150,9 +150,9 @@ class Neural_Net():
 
         x_combined = concatenate([x, x_pre.output])
 
-        x_comb = Dense(1024, activation='relu')(x_combined)
+        # x_combined = Dense(1024, activation='relu')(x_combined)
 
-        y = Dense(self.num_classes, activation='softmax')(x_comb)
+        y = Dense(self.num_classes, activation='softmax')(x_combined)
 
         neural_net_model = models.Model(inputs=[raw, pre], outputs=y)
 
@@ -290,7 +290,7 @@ def train_neural_net(ids_cat, mapping):
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=8, callbacks=[callback_tb])
+              epochs=10, callbacks=[callback_tb])
 
     model.check_freezed_trained_weights()
     model.store_model('logs/model_{}.h5'.format(int(time.time())))

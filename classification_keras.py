@@ -1,3 +1,5 @@
+import time
+
 import keras
 import keras.backend as K
 import numpy as np
@@ -5,8 +7,10 @@ from keras import models
 from keras.applications.inception_v3 import InceptionV3
 from keras.layers import Input, MaxPooling2D, Conv2D, Activation, BatchNormalization, AveragePooling2D, concatenate, \
     GlobalAveragePooling2D, Dense
+from sklearn.metrics import confusion_matrix
 
-from utils.set_up_db import read_csv_to_dict
+from utils.analysis import image_confusion_matrix
+from utils.set_up_db import read_csv_to_dict, concat_ids_and_predictions
 from utils.generator import DataGenerator
 
 
@@ -220,6 +224,12 @@ class Neural_Net():
         self.neural_net.fit_generator(generator=training_generator, validation_data=validation_generator,
                                       epochs=epochs, callbacks=callbacks, **kwargs)
 
+    def predict(self, pred_generator):
+        return self.neural_net.predict_generator(generator=pred_generator)
+
+    def store_model(self, path):
+        self.neural_net.save(path)
+
 
 def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), name=None):
     """Utility function to apply conv + BN.
@@ -264,8 +274,8 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
 
 def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids[:16], path=None, look_up=ids_cat, num_classes=len(mapping))
-    valid_gen = DataGenerator(list_ids=ids[16:32], path=None, look_up=ids_cat, num_classes=len(mapping),
+    training_gen = DataGenerator(list_ids=ids[:16], path=None, look_up=ids_cat, mapping=mapping)
+    valid_gen = DataGenerator(list_ids=ids[16:32], path=None, look_up=ids_cat, mapping=mapping,
                               prop_image=0, prop_array=0)
 
     model = Neural_Net(img_size=(512,512), num_classes=len(mapping))
@@ -277,10 +287,23 @@ def train_neural_net(ids_cat, mapping):
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=2, callbacks=[callback_tb])
+              epochs=1, callbacks=[callback_tb])
 
     model.check_freezed_trained_weights()
+    model.store_model('logs/model_{}.h5'.format(int(time.time())))
 
+    return model
+
+def predict_neural_net(model, ids_cat, mapping):
+    ids = list(ids_cat.keys())
+    pred_ids = ids[32:48]
+    pred_gen = DataGenerator(list_ids=pred_ids, path=None, look_up=ids_cat, mapping=mapping,
+                              prop_image=0, prop_array=0, shuffle=False, predict=True)
+    preds = model.predict(pred_gen)
+    _df_pred = concat_ids_and_predictions(pred_ids, preds, ids_cat, mapping)
+    print(confusion_matrix(_df_pred['pattern'], _df_pred['pred_pattern'], labels=sorted(mapping.keys())))
+    image_confusion_matrix(_df_pred, mapping)
+    _df_pred.to_csv(path_or_buf='logs/db_pred_{}.csv'.format(int(time.time())))
 
 if __name__ == '__main__':
     pass

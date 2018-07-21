@@ -269,6 +269,35 @@ def image_augment_array(image, prop_image=.5, prop_array=.5):
     return image, flipped
 
 
+def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True):
+    """
+
+    :param image:
+    :param prop_image:
+    :return:
+    """
+    # Select emboss or edge and apply in prop of the cases
+    filter_source = random.choice([image_perspective_transform])
+    image = filter_source(image, prop_image)
+
+    filter_sharpen_blur = random.choice([image_sharpen, image_blur])
+    image = filter_sharpen_blur(image, prop_image)
+
+    image = np.array(image)
+
+    if flipping:
+        image, flipped = flip_image(image, prop_array)
+    else:
+        flipped = False
+
+    image = equalize_adapthist_image(image, prop_array)
+
+    filter_noise = random.choice([salt_pepper_image])
+    image = filter_noise(image, prop_array)
+
+    return image, flipped
+
+
 if __name__ == '__main__':
     with Image.open('sd04/png_txt/figs_0/f0001_01.png') as x_img:
         x_img_array = np.array(x_img)
@@ -351,4 +380,4 @@ if __name__ == '__main__':
         plt.axis('off')
         plt.title('Sample')
 
-        plt.savefig('figs/plot_augmentations.png', dpi=1200)
+        plt.savefig('figs/plot_augmentations.png')

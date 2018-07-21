@@ -4,6 +4,8 @@ import os
 import re
 
 from tqdm import tqdm
+import pandas as pd
+import numpy as no
 
 VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
 FILE = 'sd04/db_nist.csv'
@@ -70,6 +72,18 @@ def read_csv_to_dict(length=-1):
             elif i > length:
                 break
     return output, mapping
+
+
+def concat_ids_and_predictions(ids, predictions, look_up, mapping):
+    df = pd.DataFrame(predictions, index=ids)
+    df.columns = mapping.keys()
+    df['pattern'] = None
+    inv_map = {v: k for k, v in mapping.items()}
+    for id in ids:
+        df.loc[id, 'pattern'] = inv_map.get(look_up.get(id))
+    df['pred_pattern'] = df[list(mapping.keys())].idxmax(axis=1)
+    return df
+
 
 
 if __name__ == '__main__':

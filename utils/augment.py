@@ -294,8 +294,8 @@ def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True
 
     image = equalize_adapthist_image(image, prop_array)
 
-    filter_noise = random.choice([salt_pepper_image])
-    image = filter_noise(image, prop_array)
+    # filter_noise = random.choice([salt_pepper_image])
+    # image = filter_noise(image, prop_array)
 
     return image, flipped
 

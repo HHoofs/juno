@@ -9,7 +9,7 @@ from keras.layers import Input, MaxPooling2D, Conv2D, Activation, BatchNormaliza
     GlobalAveragePooling2D, Dense
 from sklearn.metrics import confusion_matrix
 
-from utils.analysis import image_confusion_matrix
+from utils.analysis import image_confusion_matrix, plot_confusion_matrix
 from utils.set_up_db import read_csv_to_dict, concat_ids_and_predictions
 from utils.generator import DataGenerator
 
@@ -304,8 +304,9 @@ def predict_neural_net(model, ids_cat, mapping):
                               prop_image=0, prop_array=0, shuffle=False, predict=True)
     preds = model.predict(pred_gen)
     _df_pred = concat_ids_and_predictions(pred_ids, preds, ids_cat, mapping)
-    print(confusion_matrix(_df_pred['pattern'], _df_pred['pred_pattern'], labels=sorted(mapping.keys())))
+    confusion_mat = confusion_matrix(_df_pred['pattern'], _df_pred['pred_pattern'], labels=sorted(mapping.keys()))
     image_confusion_matrix(_df_pred, mapping)
+    plot_confusion_matrix(confusion_mat, sorted(mapping.keys()))
     _df_pred.to_csv(path_or_buf='logs/db_pred_{}.csv'.format(int(time.time())))
 
 if __name__ == '__main__':

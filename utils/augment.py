@@ -120,11 +120,11 @@ def zoom_image(image, prop=.5, center=False):
     _size = image.shape
     if prop:
         if coin_flip(prop):
-            zoom_factor = np.random.uniform(1, .75)
+            zoom_factor = np.random.uniform(1, .8)
         else:
             return image
     else:
-        zoom_factor = .75
+        zoom_factor = .8
 
     zoom_size = np.floor(_size[0] * zoom_factor)
     if center:
@@ -269,7 +269,7 @@ def image_augment_array(image, prop_image=.5, prop_array=.5):
     return image, flipped
 
 
-def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=False):
+def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True):
     """
 
     :param image:
@@ -289,6 +289,8 @@ def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=Fals
         image, flipped = flip_image(image, prop_array)
     else:
         flipped = False
+
+    image = zoom_image(image, prop_array)
 
     image = equalize_adapthist_image(image, prop_array)
 

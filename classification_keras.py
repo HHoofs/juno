@@ -277,7 +277,7 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
 def train_neural_net(ids_cat, mapping):
     ids = list(ids_cat.keys())
     training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping, batch_size=16,
-                                 prop_image=0, prop_array=0)
+                                 prop_image=0.33, prop_array=0.33)
     valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping, batch_size=16,
                               prop_image=0, prop_array=0)
 

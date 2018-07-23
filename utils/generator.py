@@ -11,7 +11,8 @@ from .augment import image_augment_array, to_rgb, image_light_augment_array
 
 class DataGenerator(keras.utils.Sequence):
     # Generates data for Keras
-    def __init__(self, list_ids, path, look_up, mapping, predict=False,
+    def __init__(self, list_ids, path, look_up, mapping, inception_pre=True, finger_feature=False,
+                 predict=False,
                  batch_size=8, dim=(512, 512), n_channels=1, shuffle=True, mode='L',
                  prop_image=.25, prop_array=.5):
         # Initialization
@@ -23,6 +24,8 @@ class DataGenerator(keras.utils.Sequence):
         self.look_up = look_up
         self.num_classes = len(mapping)
         self.mapping = mapping
+        self.inception_pre = inception_pre
+        self.finger_feature = finger_feature
         self.predict = predict
         self.batch_size = batch_size
         self.dim = dim
@@ -65,9 +68,15 @@ class DataGenerator(keras.utils.Sequence):
     def __data_generation(self, list_ids_temp):
         # Generates data containing batch_size samples X : (n_samples, *dim, n_channels)
         x_image_raw = np.zeros((self.batch_size, *self.dim, self.n_channels))
-        x_image_pre = np.zeros((self.batch_size, 299, 299, 3))
+        x_images = {'raw': x_image_raw}
 
-        x_images = {'raw': x_image_raw, 'pre': x_image_pre}
+        if self.inception_pre:
+            x_image_pre = np.zeros((self.batch_size, 299, 299, 3))
+            x_images['pre'] = x_image_pre
+
+        if self.finger_feature:
+            x_finger = np.zeros((self.batch_size), dtype=int)
+            x_images['finger'] = x_finger
 
         augment = self.prop_array == 0 and self.prop_image == 0
 
@@ -98,11 +107,15 @@ class DataGenerator(keras.utils.Sequence):
 
                 x_images['raw'][i, ] = np.expand_dims(_array_x_raw, 2)
 
-                x_arr_pre = resize(x_arr, output_shape=(299, 299))
-                if self.mode == 'L':
-                    x_arr_pre = to_rgb(x_arr_pre)
+                if self.inception_pre:
+                    x_arr_pre = resize(x_arr, output_shape=(299, 299))
+                    if self.mode == 'L':
+                        x_arr_pre = to_rgb(x_arr_pre)
 
-                x_images['pre'][i, ] = preprocess_input(x_arr_pre)
+                    x_images['pre'][i, ] = preprocess_input(x_arr_pre)
+
+                if self.finger_feature:
+                    x_images['finger'][i] = int(sample[-2:])
 
             if not self.predict:
                 label = self.look_up.get(sample)
@@ -114,6 +127,9 @@ class DataGenerator(keras.utils.Sequence):
                     y[i] = left
                 else:
                     y[i] = label
+
+        if self.finger_feature:
+            x_images['finger'] = keras.utils.to_categorical(x_images['finger'], num_classes=10)
 
         if self.predict:
             return x_images

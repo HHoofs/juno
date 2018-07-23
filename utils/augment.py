@@ -277,8 +277,8 @@ def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True
     :return:
     """
     # Select emboss or edge and apply in prop of the cases
-    filter_source = random.choice([image_perspective_transform])
-    image = filter_source(image, prop_image)
+    # filter_source = random.choice([image_perspective_transform])
+    # image = filter_source(image, prop_image)
 
     filter_sharpen_blur = random.choice([image_sharpen, image_blur])
     image = filter_sharpen_blur(image, prop_image)

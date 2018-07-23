@@ -5,6 +5,7 @@ import keras.backend as K
 import numpy as np
 from keras import models
 from keras.applications.inception_v3 import InceptionV3
+from keras.callbacks import ReduceLROnPlateau
 from keras.layers import Input, MaxPooling2D, Conv2D, Activation, BatchNormalization, AveragePooling2D, concatenate, \
     GlobalAveragePooling2D, Dense
 from sklearn.metrics import confusion_matrix
@@ -287,10 +288,11 @@ def train_neural_net(ids_cat, mapping):
     model.compile()
     model.check_freezed_trained_weights()
 
+    lower_lear = ReduceLROnPlateau(monitor='loss', factor=.33, patience=10, verbose=0, mode='auto', cooldown=10)
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=16, callbacks=[callback_tb])
+              epochs=32, callbacks=[callback_tb, lower_lear])
 
     model.check_freezed_trained_weights()
     model.store_model('logs/model_{}.h5'.format(int(time.time())))

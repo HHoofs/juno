@@ -3,14 +3,13 @@ import glob
 import os
 import re
 
-from tqdm import tqdm
 import pandas as pd
-import numpy as no
+from tqdm import tqdm
 
-VARIABLES = ['id', 'full_path', 'subdir', 'gender', 'pattern']
+FIXED_VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
 FILE = 'sd04/db_nist.csv'
 
-def read_files_sd04(variables=VARIABLES):
+def read_files_sd04(variables=FIXED_VARS):
     list_ids = glob.glob('sd04/png_txt/*/*.txt')
 
     with open(FILE, 'w', newline='') as csv_db:
@@ -45,8 +44,8 @@ def read_csv_to_dict(length=-1):
     mapping = {}
     output = {}
     # location of vars
-    pattern_loc = [i for i, var in enumerate(VARIABLES) if var == 'pattern'][0]
-    full_path_loc = [i for i, var in enumerate(VARIABLES) if var == 'full_path'][0]
+    pattern_loc = [i for i, var in enumerate(FIXED_VARS) if var == 'pattern'][0]
+    full_path_loc = [i for i, var in enumerate(FIXED_VARS) if var == 'full_path'][0]
     # mapping of categories set at init
     mapped_integer = 0
     # open file

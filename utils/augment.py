@@ -74,10 +74,10 @@ def flip_image(image, prop=.5):
     if prop:
         if coin_flip(prop):
             return np.fliplr(image), True
-        else:
-            return image, False
-    else:
-        return np.fliplr(image), True
+        # else
+        return image, False
+    # else
+    return np.fliplr(image), True
 
 
 def equalize_adapthist_image(image, prop=.5):
@@ -201,13 +201,13 @@ def coin_flip(true_prop=.5):
 
 
 def normalize_image(image):
-    max = image.max()
-    image *= 255.0 / max
+    clip_value = image.max()
+    image *= 255.0 / clip_value
     return image
 
 
 def crop_center_image(img, height, width):
-    h, w, c = img.shape
+    h, w, _ = img.shape
     dy = (h-height)//2
     dx = (w-width)//2
     y1 = dy

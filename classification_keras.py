@@ -305,7 +305,7 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
     return x
 
 
-def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=False):
+def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
     ids = sorted(list(ids_cat.keys()))
     training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping,
                                  inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
@@ -325,14 +325,14 @@ def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finge
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=1, callbacks=[callback_tb, lower_lear])
+              epochs=16, callbacks=[callback_tb, lower_lear])
 
     model.check_freezed_trained_weights()
     model.store_model('logs/model_{}.h5'.format(int(time.time())))
 
     return model
 
-def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=False):
+def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
     ids = sorted(list(ids_cat.keys()))
     pred_ids = ids[-500:]
     pred_gen = DataGenerator(list_ids=pred_ids, path=None, look_up=ids_cat, mapping=mapping,

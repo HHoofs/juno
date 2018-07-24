@@ -7,10 +7,10 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as no
 
-VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
+VARIABLES = ['id', 'full_path', 'subdir', 'gender', 'pattern']
 FILE = 'sd04/db_nist.csv'
 
-def read_files_sd04(variables=VARS):
+def read_files_sd04(variables=VARIABLES):
     list_ids = glob.glob('sd04/png_txt/*/*.txt')
 
     with open(FILE, 'w', newline='') as csv_db:
@@ -32,11 +32,11 @@ def extract_gender_and_pattern(variables, y_txt):
             variables.append(re.search('Class: (.)', line).group(1))
 
 
-def extract_file_path_info(id):
+def extract_file_path_info(sample):
     variables = []
-    variables.append(os.path.splitext(os.path.basename(id))[0])
-    variables.append(os.path.splitext(id)[0])
-    variables.append(os.path.dirname(id).split(os.sep)[-1])
+    variables.append(os.path.splitext(os.path.basename(sample))[0])
+    variables.append(os.path.splitext(sample)[0])
+    variables.append(os.path.dirname(sample).split(os.sep)[-1])
     return variables
 
 
@@ -45,8 +45,8 @@ def read_csv_to_dict(length=-1):
     mapping = {}
     output = {}
     # location of vars
-    pattern_loc = [i for i, var in enumerate(VARS) if var == 'pattern'][0]
-    full_path_loc = [i for i, var in enumerate(VARS) if var == 'full_path'][0]
+    pattern_loc = [i for i, var in enumerate(VARIABLES) if var == 'pattern'][0]
+    full_path_loc = [i for i, var in enumerate(VARIABLES) if var == 'full_path'][0]
     # mapping of categories set at init
     mapped_integer = 0
     # open file
@@ -85,7 +85,6 @@ def concat_ids_and_predictions(ids, predictions, look_up, mapping):
         df.loc[_id, 'pattern'] = inv_map.get(look_up.get(_id))
     df['pred_pattern'] = df[list(mapping.keys())].idxmax(axis=1)
     return df
-
 
 
 if __name__ == '__main__':

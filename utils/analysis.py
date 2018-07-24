@@ -9,10 +9,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
-def image_to_array(path, id, mode='L'):
+def image_to_array(path, sample, mode='L'):
     if path is None:
         path = ""
-    with Image.open(os.path.join(path, id + '.png')) as x_img:
+    with Image.open(os.path.join(path, sample + '.png')) as x_img:
         x_img = x_img.convert(mode=mode)
         return x_img
 
@@ -25,7 +25,7 @@ def image_confusion_matrix(df, mapping):
         for j, pattern_y in enumerate(classes):
             _id = df[df.pattern == pattern_x][pattern_y].idxmax()
             plt.subplot(len(mapping), len(mapping), count)
-            plt.imshow(image_to_array(path=None, id=_id), cmap=plt.cm.gray, interpolation='none')
+            plt.imshow(image_to_array(path=None, sample=_id), cmap=plt.cm.gray, interpolation='none')
             if i == 0:
                 plt.title(pattern_y)
             if j == 0:

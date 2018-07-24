@@ -77,9 +77,11 @@ class Neural_Net():
         # mixed 2:
         branch1x1 = conv2d_bn_alt(x, relative_size * 64, 1, 1)
 
+        # 5x5
         branch5x5 = conv2d_bn_alt(x, relative_size * 48, 1, 1)
         branch5x5 = conv2d_bn_alt(branch5x5, relative_size * 64, 5, 5)
 
+        # 3x3
         branch3x3dbl = conv2d_bn_alt(x, relative_size * 64, 1, 1)
         branch3x3dbl = conv2d_bn_alt(branch3x3dbl, relative_size * 96, 3, 3)
         branch3x3dbl = conv2d_bn_alt(branch3x3dbl, relative_size * 96, 3, 3)

@@ -16,13 +16,16 @@ from utils.generator import DataGenerator
 
 
 class Neural_Net():
-    def __init__(self, img_size, num_classes):
+    def __init__(self, img_size, num_classes, inception_pre=True, finger_feature=False,):
         self.img_size = img_size
         self.num_classes = num_classes
 
+        self.inception_pre = inception_pre
+        self.finger_feature = finger_feature
+
         self.neural_net = None
         self.inception_v3_layers = None
-        self.custom_inception_layers = None
+        self.custom_layers = None
 
         self.freezed_weight_checks = None
         self.trained_weight_checks = None
@@ -146,54 +149,81 @@ class Neural_Net():
         # end:
         x = GlobalAveragePooling2D()(x)
 
-        pre = Input(shape=(299, 299, 3), name='pre')
-        x_pre = InceptionV3(include_top=False, input_tensor=pre, pooling='avg')
+        if self.inception_pre:
+            pre = Input(shape=(299, 299, 3), name='pre')
+            x_pre = InceptionV3(include_top=False, input_tensor=pre, pooling='avg')
+            x_combined = concatenate([x, x_pre.output])
 
-        x_combined = concatenate([x, x_pre.output])
+        else:
+            x_combined = x
 
         x_combined = Dense(256, activation='relu')(x_combined)
 
-        y = Dense(self.num_classes, activation='softmax')(x_combined)
+        if self.finger_feature:
+            finger = Input(shape=(10,), name='finger')
+            x_end = concatenate([x_combined, finger])
 
-        neural_net_model = models.Model(inputs=[raw, pre], outputs=y)
+        else:
+            x_end = x_combined
+
+        y = Dense(self.num_classes, activation='softmax')(x_end)
+
+        if self.inception_pre and self.finger_feature:
+            neural_net_model = models.Model(inputs=[raw, pre, finger], outputs=y)
+
+        if self.inception_pre and not self.finger_feature:
+            neural_net_model = models.Model(inputs=[raw, pre], outputs=y)
+
+        if not self.inception_pre and self.finger_feature:
+            neural_net_model = models.Model(inputs=[raw, finger], outputs=y)
+
+        if not self.inception_pre and not self.finger_feature:
+            neural_net_model = models.Model(inputs=[raw], outputs=y)
 
         self.neural_net = neural_net_model
-        self.inception_v3_layers = x_pre.layers
-        self.custom_inception_layers = [x for x in neural_net_model.layers if x not in self.inception_v3_layers]
+        if self.inception_pre:
+            self.inception_v3_layers = x_pre.layers
+            self.custom_layers = [x for x in neural_net_model.layers if x not in self.inception_v3_layers]
+        else:
+            self.inception_v3_layers = None
+            self.custom_layers = [x for x in neural_net_model.layers]
 
     def freeze_inception_layers(self, check=True):
-        for layer2freeze in self.inception_v3_layers:
-            self.neural_net.get_layer(layer2freeze.name).trainable = False
+        if self.inception_pre:
+            for layer2freeze in self.inception_v3_layers:
+                self.neural_net.get_layer(layer2freeze.name).trainable = False
 
         if check:
-            freezed_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.inception_v3_layers)
-            self.freezed_weight_checks = freezed_batchnorm_conv_weights
+            if self.inception_pre:
+                freezed_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.inception_v3_layers)
+                self.freezed_weight_checks = freezed_batchnorm_conv_weights
 
-            trained_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.custom_inception_layers)
+            trained_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.custom_layers)
             self.trained_weight_checks = trained_batchnorm_conv_weights
 
     def check_freezed_trained_weights(self):
-        if self.freezed_weight_checks is None:
+        if self.trained_weight_checks is None:
             print('No weights are available to use as reference')
             return None
 
-        checks = self.check_layers_weights_with_reference(layers=self.inception_v3_layers,
-                                                          ref_weights=self.freezed_weight_checks)
-        if all(checks):
-            print('Freezing of InceptionV3 successful')
-            output = [True]
-        else:
-            print('Freezing of InceptionV3 unsuccessful')
-            output = [False]
-
-        checks = self.check_layers_weights_with_reference(layers=self.custom_inception_layers,
+        checks = self.check_layers_weights_with_reference(layers=self.custom_layers,
                                                           ref_weights=self.trained_weight_checks)
         if not any(checks):
             print('Training of custom Inception successful')
-            output.append(True)
+            output = [True]
         else:
             print('Training of custom Inception unsuccessful')
-            output.append(False)
+            output = [False]
+
+        if self.freezed_weight_checks:
+            checks = self.check_layers_weights_with_reference(layers=self.inception_v3_layers,
+                                                              ref_weights=self.freezed_weight_checks)
+            if all(checks):
+                print('Freezing of InceptionV3 successful')
+                output.append(True)
+            else:
+                print('Freezing of InceptionV3 unsuccessful')
+                output.append(False)
 
         return output
 
@@ -275,14 +305,17 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
     return x
 
 
-def train_neural_net(ids_cat, mapping):
-    ids = list(ids_cat.keys())
-    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping, batch_size=16,
-                                 prop_image=0.25, prop_array=0.5)
-    valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping, batch_size=16,
-                              prop_image=0, prop_array=0)
+def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
+    ids = sorted(list(ids_cat.keys()))
+    training_gen = DataGenerator(list_ids=ids[:-500], path=None, look_up=ids_cat, mapping=mapping,
+                                 inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
+                                 batch_size=16,prop_image=0.25, prop_array=0.5)
+    valid_gen = DataGenerator(list_ids=ids[-500:], path=None, look_up=ids_cat, mapping=mapping,
+                              inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
+                              batch_size=16,prop_image=0, prop_array=0)
 
-    model = Neural_Net(img_size=(512,512), num_classes=len(mapping))
+    model = Neural_Net(img_size=(512,512), num_classes=len(mapping),
+                       inception_pre=use_pretrained_inception, finger_feature=use_finger_feature)
     model.set_net(relative_size=.5)
     model.freeze_inception_layers()
     model.compile()
@@ -292,18 +325,19 @@ def train_neural_net(ids_cat, mapping):
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=32, callbacks=[callback_tb, lower_lear])
+              epochs=16, callbacks=[callback_tb, lower_lear])
 
     model.check_freezed_trained_weights()
     model.store_model('logs/model_{}.h5'.format(int(time.time())))
 
     return model
 
-def predict_neural_net(model, ids_cat, mapping):
-    ids = list(ids_cat.keys())
+def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
+    ids = sorted(list(ids_cat.keys()))
     pred_ids = ids[-500:]
-    pred_gen = DataGenerator(list_ids=pred_ids, path=None, look_up=ids_cat, mapping=mapping, batch_size=1,
-                              prop_image=0, prop_array=0, shuffle=False, predict=True)
+    pred_gen = DataGenerator(list_ids=pred_ids, path=None, look_up=ids_cat, mapping=mapping,
+                             inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
+                             batch_size=1, prop_image=0, prop_array=0, shuffle=False, predict=True)
     preds = model.predict(pred_gen)
     _df_pred = concat_ids_and_predictions(pred_ids, preds, ids_cat, mapping)
     confusion_mat = confusion_matrix(_df_pred['pattern'], _df_pred['pred_pattern'], labels=sorted(mapping.keys()))

@@ -160,40 +160,40 @@ def image_emboss(image, prop=.5):
     if prop:
         if coin_flip(prop):
             return image.filter(ImageFilter.EMBOSS)
-        else:
-            return image
-    else:
-        return image.filter(ImageFilter.EMBOSS)
+        # else:
+        return image
+    # else:
+    return image.filter(ImageFilter.EMBOSS)
 
 
 def image_sharpen(image, prop=.5):
     if prop:
         if coin_flip(prop):
             return image.filter(ImageFilter.SHARPEN)
-        else:
-            return image
-    else:
-        return image.filter(ImageFilter.SHARPEN)
+        # else:
+        return image
+    # else:
+    return image.filter(ImageFilter.SHARPEN)
 
 
 def image_blur(image, prop=.5):
     if prop:
         if coin_flip(prop):
             return image.filter(ImageFilter.BLUR)
-        else:
-            return image
-    else:
-        return image.filter(ImageFilter.BLUR)
+        # else:
+        return image
+    # else:
+    return image.filter(ImageFilter.BLUR)
 
 
 def image_edge_enhance(image, prop):
     if prop:
         if coin_flip(prop):
             return image.filter(ImageFilter.EDGE_ENHANCE_MORE)
-        else:
-            return image
-    else:
-        return image.filter(ImageFilter.EDGE_ENHANCE_MORE)
+        # else:
+        return image
+    # else:
+    return image.filter(ImageFilter.EDGE_ENHANCE_MORE)
 
 
 def coin_flip(true_prop=.5):

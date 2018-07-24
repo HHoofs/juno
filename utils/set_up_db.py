@@ -6,7 +6,7 @@ import re
 import pandas as pd
 from tqdm import tqdm
 
-FIXED_VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
+FIXED_VARS = ('id', 'full_path', 'subdir', 'gender', 'pattern')
 FILE = 'sd04/db_nist.csv'
 
 def read_files_sd04(variables=FIXED_VARS):
@@ -17,10 +17,10 @@ def read_files_sd04(variables=FIXED_VARS):
         writer.writerow(variables)
 
         for _id in tqdm(list_ids):
-            variables = extract_file_path_info(_id)
+            id_variables = extract_file_path_info(_id)
             with open(_id) as y_txt:
-                extract_gender_and_pattern(variables, y_txt)
-            writer.writerow(variables)
+                extract_gender_and_pattern(id_variables, y_txt)
+            writer.writerow(id_variables)
 
 
 def extract_gender_and_pattern(variables, y_txt):

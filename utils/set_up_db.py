@@ -10,16 +10,16 @@ import numpy as no
 VARS = ['id', 'full_path', 'subdir', 'gender', 'pattern']
 FILE = 'sd04/db_nist.csv'
 
-def read_files_sd04(vars=VARS):
+def read_files_sd04(variables=VARS):
     list_ids = glob.glob('sd04/png_txt/*/*.txt')
 
     with open(FILE, 'w', newline='') as csv_db:
         writer = csv.writer(csv_db, quoting=csv.QUOTE_ALL)
-        writer.writerow(vars)
+        writer.writerow(variables)
 
-        for id in tqdm(list_ids):
-            variables = extract_file_path_info(id)
-            with open(id) as y_txt:
+        for _id in tqdm(list_ids):
+            variables = extract_file_path_info(_id)
+            with open(_id) as y_txt:
                 extract_gender_and_pattern(variables, y_txt)
             writer.writerow(variables)
 
@@ -81,8 +81,8 @@ def concat_ids_and_predictions(ids, predictions, look_up, mapping):
     df.columns = mapping.keys()
     df['pattern'] = None
     inv_map = {v: k for k, v in mapping.items()}
-    for id in ids:
-        df.loc[id, 'pattern'] = inv_map.get(look_up.get(id))
+    for _id in ids:
+        df.loc[_id, 'pattern'] = inv_map.get(look_up.get(_id))
     df['pred_pattern'] = df[list(mapping.keys())].idxmax(axis=1)
     return df
 

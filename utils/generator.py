@@ -7,7 +7,7 @@ from keras.applications.inception_v3 import preprocess_input
 from skimage.transform import resize
 
 from .augment import image_augment_array, to_rgb, image_light_augment_array
-
+from src.image_enhance import image_enhance
 
 class DataGenerator(keras.utils.Sequence):
     # Generates data for Keras
@@ -98,11 +98,14 @@ class DataGenerator(keras.utils.Sequence):
                 else:
                     x_arr, flipped = image_light_augment_array(x_img, self.prop_image, self.prop_array)
 
+                x_arr = image_enhance(x_arr)
+                x_arr = np.array(x_arr, dtype=int)
+
                 x_arr_raw = resize(x_arr, output_shape=(self.dim[0], self.dim[1]))
 
                 # normaliz here because preprocess for inception V3 should be clean
                 _array_x_raw = x_arr_raw
-                _array_x_raw *= 255.0 / _array_x_raw.max()
+                # _array_x_raw *= 255.0 / _array_x_raw.max()
 
                 x_images['raw'][i, ] = np.expand_dims(_array_x_raw, 2)
 

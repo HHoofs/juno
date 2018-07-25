@@ -162,7 +162,7 @@ class Neural_Net():
         x_combined = Dense(256, activation='relu')(x_combined)
 
         if self.finger_feature:
-            finger = Input(shape=(10,), name='finger')
+            finger = Input(shape=(5,), name='finger')
             x_end = concatenate([x_combined, finger])
 
         else:
@@ -252,7 +252,7 @@ class Neural_Net():
         return batch_conv_weights
 
     def compile(self, loss=keras.losses.categorical_crossentropy,
-                optimizer=keras.optimizers.Adadelta(), metrics=['acc']):
+                optimizer=keras.optimizers.Adadelta(), metrics=None):
         self.neural_net.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
     def fit(self, training_generator, validation_generator=None, epochs=None, callbacks=None, **kwargs):
@@ -320,7 +320,7 @@ def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finge
                        inception_pre=use_pretrained_inception, finger_feature=use_finger_feature)
     model.set_net(relative_size=.5)
     model.freeze_inception_layers()
-    model.compile()
+    model.compile(metrics=['acc'])
     model.check_freezed_trained_weights()
 
     lower_lear = ReduceLROnPlateau(monitor='loss', factor=.33, patience=10, verbose=0, mode='auto', cooldown=10)

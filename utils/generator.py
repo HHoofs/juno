@@ -114,7 +114,10 @@ class DataGenerator(keras.utils.Sequence):
                     x_images['pre'][i, ] = preprocess_input(x_arr_pre)
 
                 if self.finger_feature:
-                    finger.append(int(sample[-2:]) - 1)
+                    index = int(sample[-2:])
+                    if index > 5:
+                        index -= 5
+                    finger.append(index - 1)
 
             if not self.predict:
                 label = self.look_up.get(sample)
@@ -128,7 +131,7 @@ class DataGenerator(keras.utils.Sequence):
                     y[i] = label
 
         if self.finger_feature:
-            x_images['finger'] = keras.utils.to_categorical(finger, num_classes=10)
+            x_images['finger'] = keras.utils.to_categorical(finger, num_classes=5)
 
         if self.predict:
             return x_images

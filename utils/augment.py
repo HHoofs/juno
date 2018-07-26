@@ -1,5 +1,9 @@
 import random
 
+import matplotlib
+
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageFilter
@@ -300,7 +304,26 @@ def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True
     return image, flipped
 
 
-if __name__ == '__main__':
+def image_binary_augment_array(image, prop_image=0, prop_array=.5, flipping=True):
+    """
+
+    :param image:
+    :param prop_image:
+    :return:
+    """
+    image = np.array(image)
+
+    if flipping:
+        image, flipped = flip_image(image, prop_array)
+    else:
+        flipped = False
+
+    image = zoom_image(image, prop_array)
+
+    return image, flipped
+
+
+def example_grayscale():
     with Image.open('sd04/png_txt/figs_0/f0001_01.png') as x_img:
         x_img_array = np.array(x_img)
 
@@ -383,3 +406,42 @@ if __name__ == '__main__':
         plt.title('Sample')
 
         plt.savefig('figs/plot_augmentations.png')
+
+
+def example_binary():
+    with Image.open('sd04/png_txt/figs_0/f0001_01.png') as x_img:
+        plt.figure(figsize=(6.45,4.50), dpi=300)
+        plt.subplot(1,5,1)
+        plt.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
+        plt.axis('off')
+        plt.title('Orginal')
+
+    with Image.open('enhanced/f0001_01.png') as x_img:
+        x_img_array = np.array(x_img)
+
+        plt.subplot(1,5,2)
+        plt.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
+        plt.axis('off')
+        plt.title('Orginal')
+
+        plt.subplot(1,5,3)
+        plt.imshow(affine_transform_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
+        plt.axis('off')
+        plt.title('Affine')
+
+        plt.subplot(1,5,4)
+        _flip_img, _ = flip_image(x_img_array, False)
+        plt.imshow(_flip_img, cmap=plt.cm.gray, interpolation='none')
+        plt.axis('off')
+        plt.title('Flip')
+
+        plt.subplot(1,5,5)
+        plt.imshow(zoom_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
+        plt.axis('off')
+        plt.title('Zoom')
+
+        plt.savefig('figs/plot_augmentations_binary.png')
+
+
+if __name__ == '__main__':
+    example_binary()

@@ -2,9 +2,13 @@ import csv
 import glob
 import os
 import re
+import scipy
+import numpy as np
 
 import pandas as pd
 from tqdm import tqdm
+
+from src import image_enhance
 
 FIXED_VARS = ('id', 'full_path', 'subdir', 'gender', 'pattern')
 FILE = 'sd04/db_nist.csv'
@@ -86,5 +90,15 @@ def concat_ids_and_predictions(ids, predictions, look_up, mapping):
     return df
 
 
+def store_enhance():
+    _df = pd.read_csv(filepath_or_buffer='../sd04/db_nist.csv')
+    for index, row in _df.iterrows():
+        img = scipy.ndimage.imread('../' + row['full_path'] + '.png')
+        enhanced_img = image_enhance.image_enhance(img)
+        x_arr = np.array(enhanced_img, dtype=int)
+        scipy.misc.imsave('../enhanced/' + row['id'] + '.png', x_arr)
+
+
 if __name__ == '__main__':
-    read_files_sd04()
+    # read_files_sd04()
+    store_enhance()

@@ -5,6 +5,10 @@ Created on Mon Apr 18 11:42:58 2016
 @author: utkarsh
 """
 
+import matplotlib
+
+matplotlib.use('Agg')
+
 import numpy as np
 #import cv2
 #import numpy as np;

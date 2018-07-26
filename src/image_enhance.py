@@ -4,6 +4,9 @@ Created on Mon Apr 18 22:50:30 2016
 
 @author: utkarsh
 """
+import matplotlib
+
+matplotlib.use('Agg')
 import scipy
 
 from .ridge_segment import ridge_segment

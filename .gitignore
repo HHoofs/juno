@@ -1,5 +1,6 @@
 # Images
 sd04/
+enhanced/
 
 # Virtual env
 venv/
@@ -12,3 +13,4 @@ db_nist.csv
 __pycache__/
 .Rproj.user
 *.Rproj
+.Rhistory

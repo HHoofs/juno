@@ -410,35 +410,36 @@ def example_grayscale():
 
 def example_binary():
     with Image.open('sd04/png_txt/figs_0/f0001_01.png') as x_img:
-        plt.figure(figsize=(6.45,4.50), dpi=300)
-        plt.subplot(1,5,1)
-        plt.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
-        plt.axis('off')
-        plt.title('Orginal')
+        fig = plt.figure(figsize=(6.45,4.50), dpi=300)
+        ax1 = plt.subplot2grid((2, 4), (0, 0), colspan=2, rowspan=2)
+        ax2 = plt.subplot2grid((2, 4), (0, 2), colspan=1, rowspan=1)
+        ax3 = plt.subplot2grid((2, 4), (1, 2), colspan=1, rowspan=1)
+        ax4 = plt.subplot2grid((2, 4), (0, 3), colspan=1, rowspan=1)
+        ax5 = plt.subplot2grid((2, 4), (1, 3), colspan=1, rowspan=1)
+
+        ax1.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
+        ax1.axis('off')
+        ax1.set_title('Original')
 
     with Image.open('enhanced/f0001_01.png') as x_img:
         x_img_array = np.array(x_img)
 
-        plt.subplot(1,5,2)
-        plt.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
-        plt.axis('off')
-        plt.title('Orginal')
+        ax2.imshow(x_img, cmap=plt.cm.gray, interpolation='none')
+        ax2.axis('off')
+        ax2.set_title('Gabor')
 
-        plt.subplot(1,5,3)
-        plt.imshow(affine_transform_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
-        plt.axis('off')
-        plt.title('Affine')
+        ax3.imshow(affine_transform_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
+        ax3.axis('off')
+        ax3.set_title('Affine')
 
-        plt.subplot(1,5,4)
         _flip_img, _ = flip_image(x_img_array, False)
-        plt.imshow(_flip_img, cmap=plt.cm.gray, interpolation='none')
-        plt.axis('off')
-        plt.title('Flip')
+        ax4.imshow(_flip_img, cmap=plt.cm.gray, interpolation='none')
+        ax4.axis('off')
+        ax4.set_title('Flip')
 
-        plt.subplot(1,5,5)
-        plt.imshow(zoom_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
-        plt.axis('off')
-        plt.title('Zoom')
+        ax5.imshow(zoom_image(x_img_array, False), cmap=plt.cm.gray, interpolation='none')
+        ax5.axis('off')
+        ax5.set_title('Zoom')
 
         plt.savefig('figs/plot_augmentations_binary.png')
 

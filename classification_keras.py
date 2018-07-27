@@ -12,7 +12,7 @@ from sklearn.metrics import confusion_matrix
 
 from utils.analysis import image_confusion_matrix, plot_confusion_matrix
 from utils.set_up_db import read_csv_to_dict, concat_ids_and_predictions
-from utils.generator import DataGenerator, DataGeneratorPred
+from utils.generator import DataGenerator, DataGeneratorPred, agg_ensemble
 
 
 class Neural_Net():
@@ -374,7 +374,7 @@ def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finge
     model.compile(metrics=['acc'])
     model.freezed_weights
 
-    return model
+    # return model
 
     lower_lear = ReduceLROnPlateau(monitor='loss', factor=.33, patience=10, verbose=0, mode='auto', cooldown=10)
     callback_tb = keras.callbacks.TensorBoard()
@@ -390,15 +390,13 @@ def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finge
 
 def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
     ids = sorted(list(ids_cat.keys()))
-    pred_ids = ids[5:25]
-    # pred_gen = DataGenerator(list_ids=pred_ids, path='enhanced', look_up=None, mapping=mapping,
-    #                          inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
-    #                          batch_size=1, prop_image=0, prop_array=0, shuffle=False, predict=True)
+    pred_ids = ids[-500:]
     pred_gen = DataGeneratorPred(list_ids=pred_ids, path='enhanced', look_up=ids_cat, mapping=mapping,
                              inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
                              batch_size=4, prop_image=0, prop_array=0, shuffle=False, predict=True)
     preds = model.predict(pred_gen)
-    _df_pred = concat_ids_and_predictions(pred_ids, preds, ids_cat, mapping)
+    pred_agg = agg_ensemble(pred_array=preds, mapping=mapping)
+    _df_pred = concat_ids_and_predictions(pred_ids, pred_agg, ids_cat, mapping)
     confusion_mat = confusion_matrix(_df_pred['pattern'], _df_pred['pred_pattern'], labels=sorted(mapping.keys()))
     image_confusion_matrix(_df_pred, mapping)
     plot_confusion_matrix(confusion_mat, sorted(mapping.keys()))

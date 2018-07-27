@@ -304,7 +304,7 @@ def image_light_augment_array(image, prop_image=.5, prop_array=.5, flipping=True
     return image, flipped
 
 
-def image_binary_augment_array(image, prop_image=0, prop_array=.5, flipping=True):
+def image_binary_augment_array(image, prop_array=.5, flipping=True):
     """
 
     :param image:

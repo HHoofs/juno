@@ -16,28 +16,21 @@ from utils.generator import DataGenerator, DataGeneratorPred, agg_ensemble
 
 
 class Neural_Net():
-    def __init__(self, img_size, num_classes, inception_pre=True, finger_feature=False,):
+    def __init__(self, img_size, num_classes, finger_feature=False,):
         """
         class that creates a neural net to classify fingerprints
 
         :param img_size: [tuple] of image size (w x h) as integer
         :param num_classes: [integer] providing the number of classes
-        :param inception_pre: [boolean] whether to include the pretrained inception part in the model (default: True).
         :param finger_feature: [boolean] whether to include the finger feature in the model (default: False).
         """
         self.img_size = img_size
         self.num_classes = num_classes
 
-        self.inception_pre = inception_pre
         self.finger_feature = finger_feature
 
         # Sets self to none for pep8
         self.neural_net = None
-        self.inception_v3_layers = None
-        self.custom_layers = None
-
-        self.freezed_weight_checks = None
-        self.trained_weight_checks = None
 
     def set_net(self, relative_size):
         """
@@ -170,37 +163,19 @@ class Neural_Net():
         # end custom inception architecture
         x = GlobalAveragePooling2D()(x)
 
-        # if inception pretrained is true include in model
-        if self.inception_pre:
-            # name matches generator input and three channels as pretrained inception is  build upon rgb-images
-            pre = Input(shape=(299, 299, 3), name='pre')
-            inputs.append(pre)
-
-            # insert image into the inception_v3 model
-            x_pre = InceptionV3(include_top=False, input_tensor=pre, pooling='avg')
-            # x_pre.output to get output from the keras application
-            x_combined = concatenate([x, x_pre.output])
-
-            # store layers
-            self.inception_v3_layers = x_pre.layers
-
-        # else set x to combined as this is the only part of the architecture
-        else:
-            x_combined = x
-
         # set dense layer (especially needed if pretrained is true)
-        x_combined = Dense(int(round(256 * relative_size)), activation='relu')(x_combined)
+        x = Dense(int(round(256 * relative_size)), activation='relu')(x)
 
         # if finger feature is  true include in the model
         if self.finger_feature:
             # name matches generator input, 5 as right/left hand is not taken into account
-            finger = Input(shape=(5,), name='finger')
+            finger = Input(shape=(10,), name='finger')
             inputs.append(finger)
             # combine with the output of the dense layer
-            x_end = concatenate([x_combined, finger])
+            x_end = concatenate([x, finger])
 
         else:
-            x_end = x_combined
+            x_end = x
 
         # final softmax/dense layer for prediction
         y = Dense(self.num_classes, activation='softmax')(x_end)
@@ -209,98 +184,6 @@ class Neural_Net():
 
         # set neural net
         self.neural_net = neural_net_model
-
-        if self.inception_pre:
-            self.custom_layers = [x for x in neural_net_model.layers if x not in self.inception_v3_layers]
-        else:
-            self.custom_layers = [x for x in neural_net_model.layers]
-
-    def pre_compile(self, check=True):
-        """
-        this freezes the  inception_v3 blocks and stores some layers weights to check for succesfull training/
-            freezing
-
-        :param check: [boolean] to indicate if layer weights should be stored
-        :return: none
-        """
-        # if pretrained inception_v3 is used freeze all layers associated with this mode/application
-        if self.inception_pre:
-            for layer2freeze in self.inception_v3_layers:
-                self.neural_net.get_layer(layer2freeze.name).trainable = False
-
-        # if check store (selection of) weights from the custom layers and (if applicable) the inception_v3 layers
-        if check:
-            if self.inception_pre:
-                freezed_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.inception_v3_layers)
-                self.freezed_weight_checks = freezed_batchnorm_conv_weights
-
-            trained_batchnorm_conv_weights = self.get_batchnorm_conv_weights(self.custom_layers)
-            self.trained_weight_checks = trained_batchnorm_conv_weights
-
-    @property
-    def freezed_weights(self):
-        """
-        property that indicates if training is (technically) successful.
-
-        :return: [list] with boolean(s) to indicate if training is successful. First boolean is for the custom layers
-            the second (if available) is for the inception_v3 layers
-        """
-        if self.trained_weight_checks is None:
-            print('No weights are available to use as reference')
-            return None
-
-        checks = self.check_layers_weights_with_reference(layers=self.custom_layers,
-                                                          ref_weights=self.trained_weight_checks)
-        # all checks should be false for successful training of the custom inception layers
-        if not any(checks):
-            print('Training of custom Inception successful')
-            output = [True]
-        else:
-            print('Training of custom Inception unsuccessful')
-            output = [False]
-
-        if self.freezed_weight_checks:
-            checks = self.check_layers_weights_with_reference(layers=self.inception_v3_layers,
-                                                              ref_weights=self.freezed_weight_checks)
-            # all checks should be true for successful 'training' of the inception_v3 layers
-            if all(checks):
-                print('Freezing of InceptionV3 successful')
-                output.append(True)
-            else:
-                print('Freezing of InceptionV3 unsuccessful')
-                output.append(False)
-
-        # return list
-        return output
-
-    def check_layers_weights_with_reference(self, layers, ref_weights):
-        """
-        Checks if layer weights are equal or different.
-
-        :param layers: layers to be used for comparison
-        :param ref_weights: numpy array with the reference weights
-        :return: [list] of booleans where True indicates equal weights
-        """
-        weights = self.get_batchnorm_conv_weights(layers)
-        checks = []
-        for idx in range(len(weights)):
-            checks.append(np.array_equal(ref_weights[idx], weights[idx]))
-        return checks
-
-    def get_batchnorm_conv_weights(self, layers):
-        batch_conv_weights = []
-
-        for layer in layers:
-            if 'batch_normalization' in layer.name:
-                batch_conv_weights.append(self.neural_net.get_layer(layer.name).get_weights())
-                break
-
-        for layer in layers:
-            if 'conv2d' in layer.name:
-                batch_conv_weights.append(self.neural_net.get_layer(layer.name).get_weights())
-                break
-
-        return batch_conv_weights
 
     def compile(self, loss=keras.losses.categorical_crossentropy,
                 optimizer=keras.optimizers.Adadelta(), metrics=None):
@@ -358,39 +241,34 @@ def conv2d_bn_alt(x, filters, num_row, num_col, padding='same', strides=(1, 1), 
     return x
 
 
-def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
+def train_neural_net(ids_cat, mapping, use_finger_feature=True):
     ids = sorted(list(ids_cat.keys()))
-    training_gen = DataGenerator(list_ids=ids[:-500], path='enhanced', look_up=ids_cat, mapping=mapping,
-                                 inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
+    training_gen = DataGenerator(list_ids=ids[:-500], path='enhanced', look_up=ids_cat,
+                                 mapping=mapping, finger_feature=use_finger_feature, binary_mode=True,
                                  batch_size=16,prop_image=0, prop_array=.5)
-    valid_gen = DataGenerator(list_ids=ids[-500:], path='enhanced', look_up=ids_cat, mapping=mapping,
-                              inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
+    valid_gen = DataGenerator(list_ids=ids[-500:], path='enhanced', look_up=ids_cat,
+                              mapping=mapping, finger_feature=use_finger_feature, binary_mode=True,
                               batch_size=16,prop_image=0, prop_array=0)
 
-    model = Neural_Net(img_size=(512,512), num_classes=len(mapping),
-                       inception_pre=use_pretrained_inception, finger_feature=use_finger_feature)
-    model.set_net(relative_size=.1)
-    model.pre_compile()
+    model = Neural_Net(img_size=(512,512), num_classes=len(mapping), finger_feature=use_finger_feature)
+    model.set_net(relative_size=.2)
     model.compile(metrics=['acc'])
-    model.freezed_weights
 
     lower_lear = ReduceLROnPlateau(monitor='loss', factor=.33, patience=10, verbose=0, mode='auto', cooldown=10)
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=64, callbacks=[callback_tb, lower_lear])
+              epochs=56, callbacks=[callback_tb, lower_lear])
 
     model.store_model('logs/model_{}.h5'.format(int(time.time())))
 
     return model
 
 
-def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=False):
+def predict_neural_net(model, ids_cat, mapping, use_finger_feature=False):
     ids = sorted(list(ids_cat.keys()))
     pred_ids = ids[-500:]
-    pred_gen = DataGeneratorPred(list_ids=pred_ids, path='enhanced', look_up=ids_cat, mapping=mapping,
-                             inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
-                             batch_size=4, prop_image=0, prop_array=0, shuffle=False, predict=True)
+    pred_gen = DataGeneratorPred(list_ids=pred_ids, path='enhanced', finger_feature=True, mapping=mapping, binary_mode=True)
     preds = model.predict(pred_gen)
     pred_agg = agg_ensemble(pred_array=preds, mapping=mapping)
     _df_pred = concat_ids_and_predictions(pred_ids, pred_agg, ids_cat, mapping)

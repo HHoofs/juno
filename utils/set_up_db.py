@@ -2,12 +2,18 @@ import csv
 import glob
 import os
 import re
+import scipy
+import numpy as np
 
 import pandas as pd
+from PIL import Image
 from tqdm import tqdm
+
+from src import image_enhance
 
 FIXED_VARS = ('id', 'full_path', 'subdir', 'gender', 'pattern')
 FILE = 'sd04/db_nist.csv'
+FILE2 = '../sd08/GeneralPatterns.txt'
 
 def read_files_sd04(variables=FIXED_VARS):
     list_ids = glob.glob('sd04/png_txt/*/*.txt')
@@ -70,9 +76,38 @@ def read_csv_to_dict(length=-1):
                 _id = row[full_path_loc]
                 _id_san = _id.replace("\\", "/")
                 output[_id_san] = cat_rec
-            elif i > length:
+            elif i >= length:
                 break
     return output, mapping
+
+
+def read_txt_to_dict(length=-1):
+    #
+    mapping = {}
+    output = {}
+    #
+    mapped_integer = 0
+    with open(FILE2) as txt_db:
+        read_txt= csv.reader(txt_db, delimiter=' ')
+        for i, row in enumerate(read_txt):
+            print(i)
+            if i == 0:
+                pass
+            elif i <= length or length == -1:
+                cat1 = row[1]
+                cat2 = row[2]
+                if cat1 == cat2 or cat2 == 'UNKNOWN':
+                    cat = cat1[3]
+                    if cat not in mapping.keys():
+                        mapping[cat] = mapped_integer
+                        mapped_integer += 1
+                    # get mapping
+                    cat_rec = mapping.get(cat)
+                    output[os.path.splitext(os.path.basename(row[0]))[0]] = cat_rec
+            elif i >= length:
+                break
+    return output, mapping
+
 
 
 def concat_ids_and_predictions(ids, predictions, look_up, mapping):
@@ -86,5 +121,26 @@ def concat_ids_and_predictions(ids, predictions, look_up, mapping):
     return df
 
 
+def store_enhance(sd08=False):
+    if not sd08:
+        _df = pd.read_csv(filepath_or_buffer='../sd04/db_nist.csv')
+        for index, row in _df.iterrows():
+            img = scipy.ndimage.imread('../' + row['full_path'] + '.png')
+            enhanced_img = image_enhance.image_enhance(img)
+            x_arr = np.array(enhanced_img, dtype=int)
+            scipy.misc.imsave('../enhanced/' + row['id'] + '.png', x_arr)
+    else:
+        file_paths = glob.glob('../sd08/*.bmp')
+        for file_path in file_paths:
+            with Image.open(file_path) as x_img:
+                img = x_img.convert(mode="L")
+                img = np.array(img)
+                enhanced_img = image_enhance.image_enhance(img)
+                x_arr = np.array(enhanced_img, dtype=int)
+                scipy.misc.imsave('../enh/' + os.path.basename(file_path).split('.')[0] + '.png', x_arr)
+
 if __name__ == '__main__':
-    read_files_sd04()
+    # read_files_sd04()
+    # store_enhance(True)
+    ss = read_txt_to_dict()
+    print(len(ss))

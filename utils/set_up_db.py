@@ -6,6 +6,7 @@ import scipy
 import numpy as np
 
 import pandas as pd
+from PIL import Image
 from tqdm import tqdm
 
 from src import image_enhance
@@ -90,15 +91,24 @@ def concat_ids_and_predictions(ids, predictions, look_up, mapping):
     return df
 
 
-def store_enhance():
-    _df = pd.read_csv(filepath_or_buffer='../sd04/db_nist.csv')
-    for index, row in _df.iterrows():
-        img = scipy.ndimage.imread('../' + row['full_path'] + '.png')
-        enhanced_img = image_enhance.image_enhance(img)
-        x_arr = np.array(enhanced_img, dtype=int)
-        scipy.misc.imsave('../enhanced/' + row['id'] + '.png', x_arr)
-
+def store_enhance(sd08=False):
+    if not sd08:
+        _df = pd.read_csv(filepath_or_buffer='../sd04/db_nist.csv')
+        for index, row in _df.iterrows():
+            img = scipy.ndimage.imread('../' + row['full_path'] + '.png')
+            enhanced_img = image_enhance.image_enhance(img)
+            x_arr = np.array(enhanced_img, dtype=int)
+            scipy.misc.imsave('../enhanced/' + row['id'] + '.png', x_arr)
+    else:
+        file_paths = glob.glob('../sd08/*.bmp')
+        for file_path in file_paths:
+            with Image.open(file_path) as x_img:
+                img = x_img.convert(mode="L")
+                img = np.array(img)
+                enhanced_img = image_enhance.image_enhance(img)
+                x_arr = np.array(enhanced_img, dtype=int)
+                scipy.misc.imsave('../enh/' + os.path.basename(file_path).split('.')[0] + '.png', x_arr)
 
 if __name__ == '__main__':
     # read_files_sd04()
-    store_enhance()
+    store_enhance(True)

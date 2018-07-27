@@ -362,33 +362,31 @@ def train_neural_net(ids_cat, mapping, use_pretrained_inception=False, use_finge
     ids = sorted(list(ids_cat.keys()))
     training_gen = DataGenerator(list_ids=ids[:-500], path='enhanced', look_up=ids_cat, mapping=mapping,
                                  inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
-                                 batch_size=16,prop_image=0.25, prop_array=0.5)
+                                 batch_size=16,prop_image=0, prop_array=.5)
     valid_gen = DataGenerator(list_ids=ids[-500:], path='enhanced', look_up=ids_cat, mapping=mapping,
                               inception_pre=use_pretrained_inception, finger_feature=use_finger_feature,
                               batch_size=16,prop_image=0, prop_array=0)
 
     model = Neural_Net(img_size=(512,512), num_classes=len(mapping),
                        inception_pre=use_pretrained_inception, finger_feature=use_finger_feature)
-    model.set_net(relative_size=.5)
+    model.set_net(relative_size=.1)
     model.pre_compile()
     model.compile(metrics=['acc'])
-    model.freezed_weights
-
-    return model
+    print(model.freezed_weights)
 
     lower_lear = ReduceLROnPlateau(monitor='loss', factor=.33, patience=10, verbose=0, mode='auto', cooldown=10)
     callback_tb = keras.callbacks.TensorBoard()
 
     model.fit(training_generator=training_gen, validation_generator=valid_gen,
-              epochs=16, callbacks=[callback_tb, lower_lear])
+              epochs=64, callbacks=[callback_tb, lower_lear])
 
-    model.freezed_weights
+    print(model.freezed_weights)
     model.store_model('logs/model_{}.h5'.format(int(time.time())))
 
     return model
 
 
-def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=True):
+def predict_neural_net(model, ids_cat, mapping, use_pretrained_inception=False, use_finger_feature=False):
     ids = sorted(list(ids_cat.keys()))
     pred_ids = ids[5:25]
     # pred_gen = DataGenerator(list_ids=pred_ids, path='enhanced', look_up=None, mapping=mapping,

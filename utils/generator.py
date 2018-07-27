@@ -97,6 +97,7 @@ class DataGenerator(keras.utils.Sequence):
 
                 if augment:
                     x_arr = np.array(x_img)
+                    x_arr = img_as_bool(x_arr)
                 else:
                     x_arr, flipped = image_binary_augment_array(x_img)
                     x_arr = img_as_bool(x_arr)

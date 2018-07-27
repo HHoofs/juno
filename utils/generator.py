@@ -72,20 +72,15 @@ class DataGenerator(keras.utils.Sequence):
         x_image_raw = np.zeros((self.batch_size, *self.dim, self.n_channels))
         x_images = {'raw': x_image_raw}
 
-        if self.inception_pre:
-            x_image_pre = np.zeros((self.batch_size, 299, 299, 3))
-            x_images['pre'] = x_image_pre
-
         if self.finger_feature:
             finger = []
 
-        augment = self.prop_array == 0 and self.prop_image == 0
+        augment = self.prop_array > 0 or self.prop_image > 0
 
         if not self.predict:
             y = np.zeros((self.batch_size), dtype=int)
             left = self.mapping.get('L')
             right = self.mapping.get('R')
-
 
         # Generate data
         for i, sample in enumerate(list_ids_temp):
@@ -95,49 +90,22 @@ class DataGenerator(keras.utils.Sequence):
             with Image.open(os.path.join(self.path, sample.split('/')[-1] + '.png')) as x_img:
                 x_img = x_img.convert(mode=self.mode)
 
-                if augment:
-                    x_arr = np.array(x_img)
-                    x_arr = img_as_bool(x_arr)
+                if self.binary_mode:
+                    flipped, x_arr = self.read_binary_img(augment, flipped, x_img)
                 else:
-                    x_arr, flipped = image_binary_augment_array(x_img)
-                    x_arr = img_as_bool(x_arr)
+                    flipped, x_arr = self.read_gray_mode(augment, flipped, x_img)
 
-                # else:
-                #     x_arr, flipped = image_light_augment_array(x_img, self.prop_image, self.prop_array)
+                x_images['raw'][i,] = np.array(np.expand_dims(x_arr, 2), dtype=int)
 
-                x_arr = np.array(x_arr, dtype=int)
-
-                # x_arr_raw = resize(x_arr, output_shape=(self.dim[0], self.dim[1]))
-
-                # normaliz here because preprocess for inception V3 should be clean
-                _array_x_raw = x_arr
-                # _array_x_raw *= 255.0 / _array_x_raw.max()
-
-                x_images['raw'][i, ] = np.array(np.expand_dims(_array_x_raw, 2), dtype=int)
-
-                if self.inception_pre:
-                    x_arr_pre = resize(x_arr, output_shape=(299, 299))
-                    if self.mode == 'L':
-                        x_arr_pre = to_rgb(x_arr_pre)
-
-                    x_images['pre'][i, ] = preprocess_input(x_arr_pre)
-
-                if self.finger_feature:
-                    index = int(sample[-2:])
-                    if index > 5:
-                        index -= 5
-                    finger.append(index - 1)
+            if self.finger_feature:
+                index = int(sample[-2:])
+                if index > 5:
+                    index -= 5
+                finger.append(index - 1)
 
             if not self.predict:
-                label = self.look_up.get(sample)
-                if not flipped:
-                    y[i] = label
-                elif label == left:
-                    y[i] = right
-                elif label == right:
-                    y[i] = left
-                else:
-                    y[i] = label
+                _label = self.extract_label(flipped, left, right, sample)
+                y[i] = _label
 
         if self.finger_feature:
             x_images['finger'] = keras.utils.to_categorical(finger, num_classes=5)
@@ -147,6 +115,35 @@ class DataGenerator(keras.utils.Sequence):
         else:
             return x_images, keras.utils.to_categorical(y, num_classes=self.num_classes)
 
+    def extract_label(self, flipped, left, right, sample):
+        label = self.look_up.get(sample)
+        if not flipped:
+            _label = label
+        elif label == left:
+            _label = right
+        elif label == right:
+            _label = left
+        else:
+            _label = label
+        return _label
+
+    def read_gray_mode(self, augment, flipped, x_img):
+        if augment:
+            x_arr, flipped = image_light_augment_array(x_img, self.prop_image, self.prop_array)
+        else:
+            x_arr = np.array(x_img)
+        x_arr *= 255.0 / x_arr.max()
+        return flipped, x_arr
+
+    def read_binary_img(self, augment, flipped, x_img):
+        if augment:
+            x_arr, flipped = image_binary_augment_array(x_img, self.prop_image, self.prop_array)
+            x_arr = img_as_bool(x_arr)
+        else:
+            x_arr = np.array(x_img)
+            x_arr = img_as_bool(x_arr)
+        x_arr = np.array(x_arr, dtype=int)
+        return flipped, x_arr
 
 
 class DataGeneratorPred(keras.utils.Sequence):
@@ -242,25 +239,19 @@ class DataGeneratorPred(keras.utils.Sequence):
         return x_images
 
 
-
-
-
-
-def agg_xxx(pred_array, mapping):
+def agg_ensemble(pred_array, mapping):
     left = mapping.get('L')
     right = mapping.get('R')
-    agg_pred = dict.fromkeys(mapping.keys(), 0)
 
-    for i in range(4):
-        for pattern in agg_pred.keys():
-            if i < 2:
-                agg_pred[pattern] += pred_array[i, mapping.get(pattern)]
-            else:
-                if pattern == 'L':
-                    agg_pred[pattern] += pred_array[i, right]
-                elif pattern == 'R':
-                    agg_pred[pattern] += pred_array[i, left]
-                else:
-                    agg_pred[pattern] += pred_array[i, mapping.get(pattern)]
+    _shape = pred_array.shape
+    samples = _shape[0]//4
+    out_array = np.zeros((samples,_shape[1]))
 
-    return agg_pred
+    for sample in range(samples):
+        pred_array_sample = pred_array[(sample*4):(sample*4)+4]
+        _array = np.zeros((4, _shape[1]))
+        _array[:2,] = pred_array_sample[:2,]
+        _array[2:, [left,right]] = _array[2:, [right,left]]
+        out_array[sample, :] = np.sum(_array, axis=0)
+
+    return out_array

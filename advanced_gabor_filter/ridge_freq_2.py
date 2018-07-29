@@ -8,7 +8,7 @@ Created on Fri Apr 22 03:02:23 2016
 import numpy as np
 #import math
 #import scipy.ndimage
-from frequest import frequest
+from .frequest import frequest
 
 def rifdge_freq(im, mask, orient, blksze, windsze,minWaveLength, maxWaveLength):
     rows,cols = im.shape;

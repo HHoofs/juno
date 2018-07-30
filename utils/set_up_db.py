@@ -2,6 +2,8 @@ import csv
 import glob
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
+
 import scipy
 import numpy as np
 
@@ -13,7 +15,7 @@ from advanced_gabor_filter import image_enhance
 
 FIXED_VARS = ('id', 'full_path', 'subdir', 'gender', 'pattern')
 FILE = 'sd04/db_nist.csv'
-FILE2 = '../sd08/GeneralPatterns.txt'
+FILE2 = 'sd08/GeneralPatterns.txt'
 
 
 class SD04():
@@ -66,7 +68,7 @@ class SD04():
                     _id = row[full_path_loc]
                     self.sample_y[_id] = cat_rec
 
-    def enhance_images_to_rgb(self):
+    def enhance_with_gabor(self):
         _df = pd.read_csv(filepath_or_buffer=self.out_file)
         for index, row in _df.iterrows():
             img = scipy.ndimage.imread(row['full_path'] + '.png')
@@ -166,8 +168,7 @@ def read_txt_to_dict(length=-1):
     mapped_integer = 0
     with open(FILE2) as txt_db:
         read_txt= csv.reader(txt_db, delimiter=' ')
-        for i, row in enumerate(read_txt):
-            print(i)
+        for i, row in enumerate(tqdm(read_txt)):
             if i == 0:
                 pass
             elif i <= length or length == -1:

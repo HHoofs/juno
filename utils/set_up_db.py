@@ -20,22 +20,37 @@ class SD04():
     def __init__(self):
         self.variables = ('id', 'full_path', 'subdir', 'gender', 'pattern')
         self.out_file = 'sd04/db_nist.csv'
-        self.image_locations = 'sd04/png_txt/*/*.txt'
+        self.image_locations = 'sd04/png_txt/*/*.png'
         self.enhanced_image_locations = 'enhanced'
         self.mapping = {}
         self.sample_y = {}
 
     def create_csv(self):
+        """
+        Create csv and stores it in self.out_file providing the variables from self.variables.
+        Based on the images in the glob stored in self.image_locations
+
+        :return: None
+        """
+        # get all ids from the images
         list_ids = glob.glob(self.image_locations)
 
+        # open the csv to write each image information to a line
         with open(self.out_file, 'w', newline='') as csv_db:
+            # create csv write quoting the strings
             writer = csv.writer(csv_db, quoting=csv.QUOTE_ALL)
+            # write variables to header
             writer.writerow(self.variables)
+            # loop over al ids
             for _id in tqdm(list_ids):
+                # get the normalized path
                 normed_id = os.path.normpath(_id)
+                # get meta-information regarding the path
                 id_variables = self._extract_file_path_info(normed_id)
+                # open txt file to get class an gender
                 with open(normed_id) as y_txt:
                     id_variables += self._extract_gender_and_pattern(y_txt)
+                # write row
                 writer.writerow(id_variables)
 
     def csv_to_dict(self):
@@ -46,25 +61,21 @@ class SD04():
         with open(self.out_file) as csv_db:
             # read file
             read_csv = csv.reader(csv_db, delimiter=',')
-            for i, row in enumerate(read_csv):
-                # skip first row
-                if i == 0:
-                    pass
-                # read image information from db
-                else:
-                    # get category
-                    cat = row[pattern_loc]
-                    # set mapping if not present
-                    if cat not in self.mapping.keys():
-                        if len(self.mapping) == 0:
-                            self.mapping[cat] = 0
-                        else:
-                            self.mapping[cat] = max(self.mapping.values()) + 1
-                    # get mapping
-                    cat_rec = self.mapping.get(cat)
-                    # store to output
-                    _id = row[full_path_loc]
-                    self.sample_y[_id] = cat_rec
+            next(read_csv)
+            for row in tqdm(read_csv):
+                # get category
+                cat = row[pattern_loc]
+                # set mapping if not present
+                if cat not in self.mapping.keys():
+                    if len(self.mapping) == 0:
+                        self.mapping[cat] = 0
+                    else:
+                        self.mapping[cat] = max(self.mapping.values()) + 1
+                # get mapping
+                cat_rec = self.mapping.get(cat)
+                # store to output
+                _id = row[full_path_loc]
+                self.sample_y[_id] = cat_rec
 
     def enhance_images_to_rgb(self):
         _df = pd.read_csv(filepath_or_buffer=self.out_file)

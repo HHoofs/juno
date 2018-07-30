@@ -40,7 +40,8 @@ if __name__ == '__main__':
     vv.csv_to_dict()
     vv.enhance_images_to_rgb()
     # set_up_db.read_files_sd04()
-    # ids_cat, mapping = set_up_db.read_csv_to_dict()
-    neural_net = classification_keras.train_neural_net(ids_cat=vv.sample_y, mapping=vv.mapping)
-    # classification_keras.predict_neural_net(model=neural_net, ids_cat=ids_cat, mapping=mapping)
+    # set_up_db.read_txt_to_dict()
+    ids_cat, mapping = set_up_db.read_txt_to_dict()
+    neural_net = classification_keras.train_neural_net(ids_cat=ids_cat, mapping=mapping)
+    classification_keras.predict_neural_net(model=neural_net, ids_cat=ids_cat, mapping=mapping)
 
